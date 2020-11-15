@@ -1,0 +1,39 @@
+#!/bin/bash
+
+INI_NAME=99-docker-php-ext-xdebug.ini
+
+##
+cd /workspace
+
+## invoke composer install if phpunit is missing
+if [ ! -f "vendor/phpunit/phpunit/phpunit" ]; then
+    composer install
+fi
+
+## check and disable xdebug
+XDEBUG_ENABLED=
+if [ -f "/usr/local/etc/php/conf.d/${INI_NAME}" ]; then
+    XDEBUG_ENABLED=on
+    sudo /usr/local/bin/xdebug-disable
+fi
+
+###
+cleanup() {
+    exitcode=$?
+    echo $exitcode EXIT
+    ## disable opcode caching
+    sudo /usr/local/bin/opcache-disable
+    ## enable xdebug if it was enabled before
+    if [ -n "${XDEBUG_ENABLED}" ]; then
+        sudo /usr/local/bin/xdebug-enable
+    fi
+    ## exit with original exitcode
+    exit $exitcode
+}
+trap cleanup EXIT
+
+## enable opcode caching
+sudo /usr/local/bin/opcache-enable
+
+## run phpunit without coverage
+vendor/phpunit/phpunit/phpunit -c phpunit.xml "$@" --no-coverage

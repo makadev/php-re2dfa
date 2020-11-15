@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PHP_INI_DIR=${PHP_INI_DIR:-/usr/local/etc/php}
+
+INI_NAME=99-docker-php-ext-xdebug.ini
+rm -f ${PHP_INI_DIR}/conf.d/${INI_NAME}

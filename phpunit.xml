@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         verbose="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         stopOnFailure="true">
+  <coverage processUncoveredFiles="true">
+    <include>
+      <directory suffix=".php">./src</directory>
+    </include>
+    <report>
+      <php outputFile="./logs/unit.cov"/>
+    </report>
+  </coverage>
+  <testsuites>
+    <testsuite name="Unit">
+      <file>./tests/Unit/AlphaSetTest.php</file>
+      <file>./tests/Unit/EpsilonTransitionsTest.php</file>
+      <file>./tests/Unit/AlphaTransitionsTest.php</file>
+      <file>./tests/Unit/NodeSetTest.php</file>
+      <file>./tests/Unit/EpsilonNFATest.php</file>
+      <file>./tests/Unit/RegExParserTest.php</file>
+      <file>./tests/Unit/DFABuilderTest.php</file>
+    </testsuite>
+  </testsuites>
+  <logging/>
+</phpunit>

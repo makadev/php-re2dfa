@@ -1,0 +1,35 @@
+{
+    "name": "makadev/re2dfa",
+    "version": "0.1.0",
+    "description": "Library for Regular Expression to DFA transformation.",
+    "type": "library",
+    "require": {
+        "php": ">=7.4.0",
+        "makadev/bitset": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.4",
+        "phpunit/phpcov": "^8.2",
+        "phpstan/phpstan": "^0.12.51",
+        "vimeo/psalm": "^4.0",
+        "psalm/plugin-phpunit": "^0.13.0"
+    },
+    "scripts": {
+        "tests": "phpunit-nc",
+        "coverage": "phpunit-coverage",
+        "phpstan": "phpstan-check",
+        "psalm": "psalm-check"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Matthias Karbe",
+            "email": "makadev@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "makadev\\RE2DFA\\": "src/"
+        }
+    }
+}

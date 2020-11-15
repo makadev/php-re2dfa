@@ -1,0 +1,11 @@
+## idea
+.idea
+
+## phpunit & logs
+.phpunit.result.cache
+logs/
+
+## composer
+composer.phar
+/vendor/
+composer.lock

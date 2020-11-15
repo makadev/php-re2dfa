@@ -1,0 +1,21 @@
+#!/bin/bash
+
+PHP_INI_DIR=${PHP_INI_DIR:-/usr/local/etc/php}
+export PHP_INI_DIR
+
+INI_NAME=00-docker-php-ext-opcache.ini
+/usr/local/bin/docker-php-ext-enable opcache --ini-name ${INI_NAME}
+
+## setup opcache for web and cli
+echo "opcache.enable=1" >> ${PHP_INI_DIR}/conf.d/${INI_NAME}
+echo "opcache.enable_cli=1" >>  ${PHP_INI_DIR}/conf.d/${INI_NAME}
+## -> increase memory and file limit
+echo "opcache.memory_consumption=64" >>  ${PHP_INI_DIR}/conf.d/${INI_NAME}
+echo "opcache.interned_strings_buffer=16" >>  ${PHP_INI_DIR}/conf.d/${INI_NAME}
+echo "opcache.max_accelerated_files=15000" >>  ${PHP_INI_DIR}/conf.d/${INI_NAME}
+## -> deactivate revalidation, in general code inside the container should never change
+##    after startup
+echo "opcache.validate_timestamps=0" >>  ${PHP_INI_DIR}/conf.d/${INI_NAME}
+echo "opcache.file_update_protection=0" >>  ${PHP_INI_DIR}/conf.d/${INI_NAME}
+## -> explicitly don't remove comments since they might be used
+echo "opcache.save_comments=1" >>  ${PHP_INI_DIR}/conf.d/${INI_NAME}
