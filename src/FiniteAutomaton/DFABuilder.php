@@ -154,13 +154,12 @@ class DFABuilder {
                 }
             }
             // calculate disjoint AlphaSets (optimized sets)
-            $alphas = $this->alphaTransitions->getDisjointAlphas($fromSet);
+            $alphaSets = $this->alphaTransitions->getDisjointAlphas($fromSet);
             // create new nodeSet and transitions for each Disjoint AlphaSet transition
-            for ($alphas->rewind(); $alphas->valid(); $alphas->next()) {
-                /**
-                 * @var AlphaSet $alphaSet
-                 */
-                $alphaSet = $alphas->current();
+            /**
+             * @var AlphaSet $alphaSet
+             */
+            foreach ($alphaSets->enumerator(false) as $alphaSet) {
                 $toNodeSet = new NodeSet($this->allocator->allocations());
                 $toNodeSet->addReachableWithAlpha($fromSet, $this->alphaTransitions, $alphaSet);
                 $toNodeSet->addReachableWithEpsilon($this->epsilonTransitions);

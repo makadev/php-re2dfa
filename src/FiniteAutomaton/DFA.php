@@ -2,8 +2,11 @@
 
 namespace makadev\RE2DFA\FiniteAutomaton;
 
+use makadev\RE2DFA\CharacterSet\AlphaSet;
+use makadev\RE2DFA\CharacterSet\DisjointAlphaSets;
 use makadev\RE2DFA\FiniteAutomaton;
 use makadev\RE2DFA\NodeSet\NodeAllocator;
+use makadev\RE2DFA\NodeSet\NodeSet;
 use SplFixedArray;
 
 class DFA {
@@ -182,5 +185,41 @@ class DFA {
         }
         $result .= "END OF DFA";
         return $result;
+    }
+
+    /**
+     * calculate the minimal DFA
+     *
+     * @return DFA
+     */
+    public function getMinDFA(): DFA {
+        // final node set for starting partition
+        $finalNodes = new NodeSet($this->nodes->count());
+        // nonfinal node set for starting partition
+        $nonFinalNodes = new NodeSet($this->nodes->count());
+        // disjoint alpha sets used for transition checks
+        $disjointAlphas = new DisjointAlphaSets();
+        // calculate start sets
+        for($this->nodes->rewind(); $this->nodes->valid(); $this->nodes->next()) {
+            /**
+             * @var DFAFixedNode $node
+             */
+            $node = $this->nodes->current();
+            $nodeid = $this->nodes->key();
+            if($node->finalStates === null || (count($node->finalStates) <= 0)) {
+                $nonFinalNodes->add($nodeid);
+            } else {
+                $finalNodes->add($nodeid);
+            }
+            for($node->transitions->rewind(); $node->transitions->valid(); $node->transitions->next()) {
+                /**
+                 * @var DFAFixedNodeTransition $transition
+                 */
+                $transition = $node->transitions->current();
+                $disjointAlphas->addAlpha($transition->transitionSet);
+            }
+        }
+
+
     }
 }

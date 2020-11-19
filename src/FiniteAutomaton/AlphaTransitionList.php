@@ -5,10 +5,9 @@ namespace makadev\RE2DFA\FiniteAutomaton;
 
 use Generator;
 use makadev\RE2DFA\CharacterSet\AlphaSet;
+use makadev\RE2DFA\CharacterSet\DisjointAlphaSets;
 use makadev\RE2DFA\EdgeListGraph\ELGEdgeList;
 use makadev\RE2DFA\NodeSet\NodeSet;
-use SplDoublyLinkedList;
-use SplQueue;
 
 class AlphaTransitionList {
     /**
@@ -81,12 +80,10 @@ class AlphaTransitionList {
      * characters (or AlphaSets) to be tested for transitions.
      *
      * @param NodeSet $nodeSet
-     * @return SplDoublyLinkedList<AlphaSet>
+     * @return DisjointAlphaSets
      */
-    public function getDisjointAlphas(NodeSet $nodeSet): SplDoublyLinkedList {
-        $emptySet = new AlphaSet();
-        $disjointAlphaSet = new SplQueue();
-        $queue = new SplQueue();
+    public function getDisjointAlphas(NodeSet $nodeSet): DisjointAlphaSets {
+        $disjointAlphaSets = new DisjointAlphaSets();
         /**
          * @var AlphaTransition $transition
          */
@@ -96,53 +93,10 @@ class AlphaTransitionList {
              */
             foreach ($nodeSet->enumerator() as $node) {
                 if ($transition->getFromNode() === $node) {
-                    $insertionSet = clone $transition->getAlphaSet();
-                    while (!$disjointAlphaSet->isEmpty()) {
-                        /**
-                         * @var AlphaSet $currentSet
-                         */
-                        $currentSet = $disjointAlphaSet->dequeue();
-                        // test 1.: set is already fully contained
-                        if ($insertionSet->equals($currentSet)) {
-                            $queue->enqueue($currentSet);
-                            $insertionSet = $emptySet;
-                            break;
-                        }
-                        // test 2.: skip if disjoint
-                        if ($insertionSet->isDisjoint($currentSet)) {
-                            $queue->enqueue($currentSet);
-                            continue;
-                        }
-                        // 3.: otherwise break the sets apart into:
-                        //  - a common part (nonempty since both sets where not disjoint in test 2)
-                        //    and already known to be disjoint since it's in the disjoint set
-                        //  - the rest of the current set which might be empty if insertionSet contains currentSet
-                        //  - the rest of the insertion which might be empty if currentSet contains insertionSet
-                        //    and needs to be checked against the other sets if not empty
-                        $newInsertion = $insertionSet->subtract($currentSet);
-                        $common = $insertionSet->intersect($currentSet);
-                        $currentSet = $currentSet->subtract($insertionSet);
-                        assert(!$common->isEmpty());
-                        $queue->enqueue($common);
-                        if (!$currentSet->isEmpty()) {
-                            $queue->enqueue($currentSet);
-                        }
-                        if (!$newInsertion->isEmpty()) {
-                            break;
-                        }
-                        $insertionSet = $newInsertion;
-                    }
-                    // add newly generated disjoint sets back to the disjoint AlphaSets
-                    while (!$queue->isEmpty()) {
-                        $disjointAlphaSet->push($queue->dequeue());
-                    }
-                    // add disjoint rest
-                    if (!$insertionSet->isEmpty()) {
-                        $disjointAlphaSet->push($insertionSet);
-                    }
+                    $disjointAlphaSets->addAlpha($transition->getAlphaSet());
                 }
             }
         }
-        return $disjointAlphaSet;
+        return $disjointAlphaSets;
     }
 }

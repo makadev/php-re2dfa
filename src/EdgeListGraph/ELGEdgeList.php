@@ -131,7 +131,7 @@ class ELGEdgeList {
                  */
                 $edge = clone $list->current();
                 $newList->push($edge->edgeClone());
-                $this->internalList->next();
+                $list->next();
             }
         }
         for ($list->rewind(); $list->valid(); $list->next()) {
