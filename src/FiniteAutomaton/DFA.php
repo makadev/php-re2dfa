@@ -7,6 +7,7 @@ use makadev\RE2DFA\CharacterSet\DisjointAlphaSets;
 use makadev\RE2DFA\FiniteAutomaton;
 use makadev\RE2DFA\NodeSet\NodeAllocator;
 use makadev\RE2DFA\NodeSet\NodeSet;
+use makadev\RE2DFA\NodeSet\NodeSetMapper;
 use SplFixedArray;
 
 class DFA {
@@ -187,12 +188,39 @@ class DFA {
         return $result;
     }
 
+    protected function getFinalStateSets(): NodeSetMapper {
+        
+        $finalStateSetTable = [];
+        for($this->nodes->rewind(); $this->nodes->valid(); $this->nodes->next()) {
+            /**
+             * @var DFAFixedNode $node
+             */
+            $node = $this->nodes->current();
+            $nodeid = $this->nodes->key();
+            if ($node->finalStates !== null && ($node->finalStates->count() > 0)) {
+                for ($node->finalStates->rewind(); $node->finalStates->valid(); $node->finalStates->next()) {
+                    /**
+                     * @var string $state
+                     */
+                    $state = $node->finalStates->current();
+                    if(isset($finalStateSetTable[$state])) {
+
+                    } else {
+
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * calculate the minimal DFA
      *
      * @return DFA
      */
     public function getMinDFA(): DFA {
+        $nodeSetSet = new NodeSetMapper();
+
         // final node set for starting partition
         $finalNodes = new NodeSet($this->nodes->count());
         // nonfinal node set for starting partition
@@ -206,7 +234,7 @@ class DFA {
              */
             $node = $this->nodes->current();
             $nodeid = $this->nodes->key();
-            if($node->finalStates === null || (count($node->finalStates) <= 0)) {
+            if($node->finalStates === null || ($node->finalStates->count() <= 0)) {
                 $nonFinalNodes->add($nodeid);
             } else {
                 $finalNodes->add($nodeid);
@@ -220,6 +248,14 @@ class DFA {
             }
         }
 
+        // partition algorithm
+        $done = false;
+        while (!$done) {
+            $done = true;
 
+            foreach($disjointAlphas->enumerator(false) as $alphaSet) {
+
+            }
+        }
     }
 }
