@@ -2,12 +2,8 @@
 
 namespace makadev\RE2DFA\FiniteAutomaton;
 
-use makadev\RE2DFA\CharacterSet\AlphaSet;
-use makadev\RE2DFA\CharacterSet\DisjointAlphaSets;
 use makadev\RE2DFA\FiniteAutomaton;
 use makadev\RE2DFA\NodeSet\NodeAllocator;
-use makadev\RE2DFA\NodeSet\NodeSet;
-use makadev\RE2DFA\NodeSet\NodeSetMapper;
 use SplFixedArray;
 
 class DFA {
@@ -151,6 +147,15 @@ class DFA {
     }
 
     /**
+     * Access the DFA Nodes directly
+     *
+     * @return SplFixedArray<DFAFixedNode>
+     */
+    public function getNodes(): SplFixedArray {
+        return $this->nodes;
+    }
+
+    /**
      *
      *
      * @return string
@@ -188,74 +193,4 @@ class DFA {
         return $result;
     }
 
-    protected function getFinalStateSets(): NodeSetMapper {
-        
-        $finalStateSetTable = [];
-        for($this->nodes->rewind(); $this->nodes->valid(); $this->nodes->next()) {
-            /**
-             * @var DFAFixedNode $node
-             */
-            $node = $this->nodes->current();
-            $nodeid = $this->nodes->key();
-            if ($node->finalStates !== null && ($node->finalStates->count() > 0)) {
-                for ($node->finalStates->rewind(); $node->finalStates->valid(); $node->finalStates->next()) {
-                    /**
-                     * @var string $state
-                     */
-                    $state = $node->finalStates->current();
-                    if(isset($finalStateSetTable[$state])) {
-
-                    } else {
-
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * calculate the minimal DFA
-     *
-     * @return DFA
-     */
-    public function getMinDFA(): DFA {
-        $nodeSetSet = new NodeSetMapper();
-
-        // final node set for starting partition
-        $finalNodes = new NodeSet($this->nodes->count());
-        // nonfinal node set for starting partition
-        $nonFinalNodes = new NodeSet($this->nodes->count());
-        // disjoint alpha sets used for transition checks
-        $disjointAlphas = new DisjointAlphaSets();
-        // calculate start sets
-        for($this->nodes->rewind(); $this->nodes->valid(); $this->nodes->next()) {
-            /**
-             * @var DFAFixedNode $node
-             */
-            $node = $this->nodes->current();
-            $nodeid = $this->nodes->key();
-            if($node->finalStates === null || ($node->finalStates->count() <= 0)) {
-                $nonFinalNodes->add($nodeid);
-            } else {
-                $finalNodes->add($nodeid);
-            }
-            for($node->transitions->rewind(); $node->transitions->valid(); $node->transitions->next()) {
-                /**
-                 * @var DFAFixedNodeTransition $transition
-                 */
-                $transition = $node->transitions->current();
-                $disjointAlphas->addAlpha($transition->transitionSet);
-            }
-        }
-
-        // partition algorithm
-        $done = false;
-        while (!$done) {
-            $done = true;
-
-            foreach($disjointAlphas->enumerator(false) as $alphaSet) {
-
-            }
-        }
-    }
 }
