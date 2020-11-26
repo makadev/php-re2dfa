@@ -4,6 +4,7 @@
 namespace makadev\RE2DFA\FiniteAutomaton;
 
 
+use makadev\RE2DFA\CharacterSet\AlphaSet;
 use makadev\RE2DFA\CharacterSet\DisjointAlphaSets;
 use makadev\RE2DFA\NodeSet\NodeSet;
 use makadev\RE2DFA\NodeSet\NodeSetMapper;
@@ -47,17 +48,68 @@ class DFAMinimizer {
         while (!$done) {
             $done = true;
             foreach ($disjointAlphas->enumerator(false) as $alphaSet) {
-                foreach($nodeSetSet->enumerator() as $nodeSet) {
-                    if($nodeSet->count() > 0) {
-                        $nsom = $this->createNodeSetUMap($nodeSetSet, $nodeSet, $alphaSet);
-                        if($nsom->count() > 0) {
-                            $pnew = $this->newPart($nodeSetSet, $nodeSet, $nsom);
-                            $done = $done && (!$pnew);
+                // use index access here, iterator is used somewhere else
+                $setPointer = 0;
+                while ($setPointer < $nodeSetSet->count()) {
+                    $nodeSet = $nodeSetSet->getNodeSet($setPointer);
+                    // the algorithm will refine a set into at least one set with at least one element
+                    // so there should never appear an empty set
+                    assert($nodeSet->count() > 0);
+                    $nsom = $this->refineSet($nodeSetSet, $nodeSet, $alphaSet);
+                    assert(count($nsom) > 0);
+                    // if refinement only returned one set, nothing changed (same partition)
+                    // otherwise we need to add the new partitions and mark the change
+                    if(count($nsom) > 1) {
+                        $nodeSetSet->removeSet($setPointer--);
+                        foreach (array_values($nsom) as $newSet) {
+                            $nodeSetSet->add($newSet, false);
                         }
+                        $done = false;
+                    }
+                    $setPointer++;
+                }
+            }
+        }
+    }
+
+    protected function refineSet(NodeSetMapper $nsm, NodeSet $ns, AlphaSet $as): array {
+        /**
+         * @var NodeSet[] $result
+         */
+        $result = [];
+        /**
+         * @var SplFixedArray<DFAFixedNode> $nodes
+         */
+        $nodes = $this->dfa->getNodes();
+        /**
+         * @var int $nodeID
+         */
+        foreach ($ns->enumerator() as $nodeID) {
+            /**
+             * @var DFAFixedNode $node
+             */
+            $node = $nodes[$nodeID];
+            // refine partition $ns by sorting all of it's nodes into different partitions if
+            // their target nodes are in different partitions
+            for ($node->transitions->rewind(); $node->transitions->valid(); $node->transitions->next()) {
+                /**
+                 * @var DFAFixedNodeTransition $t
+                 */
+                $t = $node->transitions->current();
+                if($t->transitionSet->contains($as)) {
+                    $representative = $nsm->findRepresentativeSet($t->targetNode);
+                    assert($representative !== null);
+                    if(isset($result[$representative])) {
+                        $result[$representative]->add($nodeID);
+                    } else {
+                        $newSet = new NodeSet($nodes->count());
+                        $newSet->add($nodeID);
+                        $result[$representative] = $newSet;
                     }
                 }
             }
         }
+        return $result;
     }
 
     /**
