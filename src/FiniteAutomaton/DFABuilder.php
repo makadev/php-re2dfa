@@ -168,7 +168,50 @@ class DFABuilder {
             }
         } while (++$currentSource < $nodeSetMapper->getAllocator()->allocations());
 
-        $result = new DFA($nodeSetMapper->getAllocator(), $dfaStartNode, $finalStateTable, $dfaTransitions);
+        $result = $this->constructDFA($nodeSetMapper->getAllocator(), $dfaStartNode, $finalStateTable, $dfaTransitions);
         return $result;
+    }
+
+    protected function constructDFA(NodeAllocator $allocator, int $start, array $finalStates, AlphaTransitionList $transitions): DFA {
+        // create node lookup table
+        $nodeTable = new \SplFixedArray($allocator->allocations());
+        for ($i = 0; $i < $allocator->allocations(); $i++) {
+            $nodeTable[$i] = new DFAFixedNode();
+        }
+        $nodes = $nodeTable;
+        // save final states
+        /**
+         * @var string $finalName
+         * @var int[] $finalNodes
+         */
+        foreach ($finalStates as $finalName => $finalNodes) {
+            if (count($finalNodes) > 0) {
+                foreach ($finalNodes as $finalNode) {
+                    /**
+                     * @var DFAFixedNode $nodeObj
+                     */
+                    $nodeObj = $nodes[$finalNode];
+                    if ($nodeObj->finalStates !== null) {
+                        $nodeObj->finalStates->setSize($nodeObj->finalStates->getSize() + 1);
+                    } else {
+                        $nodeObj->finalStates = new \SplFixedArray(1);
+                    }
+                    $nodeObj->finalStates[$nodeObj->finalStates->getSize() - 1] = $finalName;
+                }
+            }
+        }
+        // save transition
+        /**
+         * @var AlphaTransition $transition
+         */
+        foreach ($transitions->enumerator() as $transition) {
+            /**
+             * @var DFAFixedNode $node
+             */
+            $node = $nodes[$transition->getFromNode()];
+            $node->transitions->push(new DFAFixedNodeTransition(clone $transition->getAlphaSet(), $transition->getToNode()));
+        }
+
+        return new DFA($nodes, $start);
     }
 }

@@ -22,60 +22,16 @@ class DFA {
     }
 
     /**
+     * DFA constructor.
      *
      * @var SplFixedArray<DFAFixedNode>
      */
     private SplFixedArray $nodes;
 
-    /**
-     * DFA constructor.
-     *
-     * @param NodeAllocator $allocator
-     * @param int $start
-     * @param array<array> $finalStates
-     * @param AlphaTransitionList $transitions
-     */
-    public function __construct(NodeAllocator $allocator, int $start, array $finalStates, AlphaTransitionList $transitions) {
-        // startnode
-        $this->startNode = $start;
-        // create node lookup table
-        $nodeTable = new SplFixedArray($allocator->allocations());
-        for ($i = 0; $i < $allocator->allocations(); $i++) {
-            $nodeTable[$i] = new FiniteAutomaton\DFAFixedNode();
-        }
-        $this->nodes = $nodeTable;
-        // save final states
-        /**
-         * @var string $finalName
-         * @var int[] $finalNodes
-         */
-        foreach ($finalStates as $finalName => $finalNodes) {
-            if (count($finalNodes) > 0) {
-                foreach ($finalNodes as $finalNode) {
-                    /**
-                     * @var DFAFixedNode $nodeObj
-                     */
-                    $nodeObj = $this->nodes[$finalNode];
-                    if ($nodeObj->finalStates !== null) {
-                        $nodeObj->finalStates->setSize($nodeObj->finalStates->getSize() + 1);
-                    } else {
-                        $nodeObj->finalStates = new SplFixedArray(1);
-                    }
-                    $nodeObj->finalStates[$nodeObj->finalStates->getSize() - 1] = $finalName;
-                }
-            }
-        }
-        // save transition
-        /**
-         * @var AlphaTransition $transition
-         */
-        foreach ($transitions->enumerator() as $transition) {
-            /**
-             * @var DFAFixedNode $node
-             */
-            $node = $this->nodes[$transition->getFromNode()];
-            $node->transitions->push(new FiniteAutomaton\DFAFixedNodeTransition(clone $transition->getAlphaSet(), $transition->getToNode()));
-        }
+    public function __construct(SplFixedArray $nodes, int $startNode)
+    {
+        $this->startNode = $startNode;
+        $this->nodes = $nodes;
     }
 
     /**

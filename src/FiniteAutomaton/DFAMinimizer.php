@@ -51,7 +51,7 @@ class DFAMinimizer {
                 // use index access here, iterator is used somewhere else
                 $setPointer = 0;
                 while ($setPointer < $nodeSetSet->count()) {
-                    $nodeSet = $nodeSetSet->getNodeSet($setPointer);
+                    $nodeSet = $nodeSetSet->getNodeSetFor($setPointer);
                     // the algorithm will refine a set into at least one set with at least one element
                     // so there should never appear an empty set
                     assert($nodeSet->count() > 0);
@@ -60,7 +60,7 @@ class DFAMinimizer {
                     // if refinement only returned one set, nothing changed (same partition)
                     // otherwise we need to add the new partitions and mark the change
                     if(count($nsom) > 1) {
-                        $nodeSetSet->removeSet($setPointer--);
+                        $nodeSetSet->remove($setPointer--);
                         foreach (array_values($nsom) as $newSet) {
                             $nodeSetSet->add($newSet, false);
                         }
@@ -70,6 +70,81 @@ class DFAMinimizer {
                 }
             }
         }
+
+        // there can't be more partitions than previous nodes
+        assert($nodeSetSet->count() <= $this->dfa->getNodes()->count());
+
+        // check, if we have as many partitions as the previous DFA, nothing realy changes
+        if($nodeSetSet->count() === $this->dfa->getNodes()->count()) {
+            return $this->dfa;
+        }
+
+        // dfa reconstruction
+        return $this->reconstructDFA($nodeSetSet);
+    }
+
+    protected function reconstructDFA(NodeSetMapper $nodeSetSet): DFA {
+        // create an mapping for.. mapping old dfa nodes to new ones
+        $nodeRemap = new \SplFixedArray($this->dfa->getNodes()->count());
+        for($i = 0; $i < $nodeSetSet->count(); $i++) {
+            $ns = $nodeSetSet->getNodeSetFor($i);
+            foreach($ns->enumerator() as $nodeID) {
+                $nodeRemap[$nodeID] = $i;
+            }
+        }
+        // create new DFA nodes
+        $oldNodes = $this->dfa->getNodes();
+        $nodes = new \SplFixedArray($nodeSetSet->count());
+        for($i = 0; $i < $nodeSetSet->count(); $i++) {
+            $nodes[$i] = new DFAFixedNode();
+        }
+        // merge old transitions with same source/target into new transitions
+        for($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
+            /**
+             * @var DFAFixedNode $oldNode
+             */
+            $oldNode = $oldNodes->current();
+            for($oldNode->transitions->rewind(); $oldNode->transitions->valid(); $oldNode->transitions->next()) {
+                /**
+                 * @var DFAFixedNodeTransition $oldTrans
+                 */
+                $oldTrans = $oldNode->transitions->current();
+                $newTarget = $nodeRemap[$oldTrans->targetNode];
+                $newTransitions = $nodes[$nodeRemap[$oldNodes->key()]]->transitions;
+                $added = false;
+                for($newTransitions->rewind(); $newTransitions->valid(); $newTransitions->next()) {
+                    /**
+                     * @var DFAFixedNodeTransition $newTrans
+                     */
+                    $newTrans = $newTransitions->current();
+                    if($newTrans->targetNode === $newTarget) {
+                        if(!$newTrans->transitionSet->contains($oldTrans->transitionSet)) {
+                            $newTrans->transitionSet = $newTrans->transitionSet->union($oldTrans->transitionSet);
+                        }
+                        $added = true;
+                        break;
+                    }
+                }
+                if(!$added) {
+                    $newTransitions->push(new DFAFixedNodeTransition(clone $oldTrans->transitionSet, $newTarget));
+                }
+            }
+        }
+        // copy one the final states of any representative for each partition and assign it to the new node
+        for($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
+            /**
+             * @var DFAFixedNode $oldNode
+             */
+            $oldNode = $oldNodes->current();
+            if($oldNode->finalStates !== null) {
+                $newNodeID = $nodeRemap[$oldNodes->key()];
+                if($nodes[$newNodeID]->finalStates === null) {
+                    $nodes[$newNodeID]->finalStates = clone $oldNode->finalStates;
+                }
+            }
+        }
+        // create new DFA and don't forget remapping the startnode
+        return new DFA($nodes, $nodeRemap[$this->dfa->getStartNode()]);
     }
 
     protected function refineSet(NodeSetMapper $nsm, NodeSet $ns, AlphaSet $as): array {

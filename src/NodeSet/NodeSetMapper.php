@@ -61,6 +61,10 @@ class NodeSetMapper {
         $this->size = 0;
     }
 
+    public function count(): int {
+        return $this->size;
+    }
+
     /**
      * get the node allocator
      *
@@ -99,6 +103,22 @@ class NodeSetMapper {
         $res = $this->allocator->allocate();
         $this->internalAdd($res, $ns);
         return $res;
+    }
+
+    /**
+     * Remove set for given Node, **this will reorder the set mapping and replace the removed node with the last node**,
+     * effectively remapping the last node.
+     *
+     * @param integer $nodeID
+     * @return void
+     */
+    public function remove(int $nodeID): void {
+        // if $nodeID is not the last element, switch places with the last element and
+        // simply reduce the array size
+        if($nodeID < --$this->size) {
+            $this->mapping[$nodeID] = $this->mapping[$this->size];
+            $this->mapping[$this->size] = null;
+        }
     }
 
     /**
