@@ -97,7 +97,7 @@ class DFAMinimizer {
         // there can't be more partitions than previous nodes
         assert($nodeSetSet->count() <= $this->dfa->getNodes()->count());
 
-        // check, if we have as many partitions as the previous DFA, nothing realy changes
+        // check, if we have as many partitions as the previous DFA has nodes in which case nothing changed
         if ($nodeSetSet->count() === $this->dfa->getNodes()->count()) {
             return $this->dfa;
         }
