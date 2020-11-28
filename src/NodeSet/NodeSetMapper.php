@@ -7,6 +7,9 @@ namespace makadev\RE2DFA\NodeSet;
 use RuntimeException;
 use SplFixedArray;
 
+/**
+ * Consecutive id to node set mapping.
+ */
 class NodeSetMapper {
 
     /**
@@ -61,6 +64,11 @@ class NodeSetMapper {
         $this->size = 0;
     }
 
+    /**
+     * get count of node sets in the mapping
+     *
+     * @return int
+     */
     public function count(): int {
         return $this->size;
     }
@@ -113,9 +121,10 @@ class NodeSetMapper {
      * @return void
      */
     public function remove(int $nodeID): void {
+        $this->allocator->deallocate();
         // if $nodeID is not the last element, switch places with the last element and
         // simply reduce the array size
-        if($nodeID < --$this->size) {
+        if ($nodeID < --$this->size) {
             $this->mapping[$nodeID] = $this->mapping[$this->size];
             $this->mapping[$this->size] = null;
         }
@@ -155,9 +164,6 @@ class NodeSetMapper {
     public function findRepresentativeSet(int $node): ?int {
         $i = 0;
         for ($this->mapping->rewind(); $this->mapping->valid(); $this->mapping->next()) {
-            if ($i >= $this->size) {
-                return null;
-            }
             /**
              * @var NodeSet $nodeSet
              */
@@ -168,25 +174,6 @@ class NodeSetMapper {
                 return $key;
             }
             $i++;
-        }
-        return null;
-    }
-
-    /**
-     * for a given node, find the representative set (the first containing the node, which should also be the only one)
-     * and return it's representative node (the first node of the representative set)
-     *
-     * @param int $node
-     * @return int|null
-     */
-    public function getRepresentative(int $node): ?int {
-        $representative = $this->findRepresentativeSet($node);
-        if ($representative) {
-            /**
-             * @var NodeSet $representativeSet
-             */
-            $representativeSet = $this->mapping[$representative];
-            return $representativeSet->getRepresentative();
         }
         return null;
     }

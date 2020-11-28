@@ -20,9 +20,26 @@ class DFAMinimizer {
      */
     protected DFA $dfa;
 
+    /**
+     * Final state to ID mapping
+     *
+     * @var StringMapper
+     */
     protected StringMapper $finalStateLT;
 
+    /**
+     * Mapping multiple final states to an ID
+     *
+     * @var StringMapper
+     */
     protected StringMapper $multiFinalStateLT;
+
+    /**
+     * Current node set partition
+     *
+     * @var NodeSetMapper
+     */
+    protected NodeSetMapper $nodeSetSet;
 
     /**
      * DFAMinimizer constructor.
@@ -33,13 +50,19 @@ class DFAMinimizer {
         $this->dfa = $dfa;
         $this->finalStateLT = new StringMapper();
         $this->multiFinalStateLT = new StringMapper();
+        $this->nodeSetSet = new NodeSetMapper();
     }
 
-    protected NodeSetMapper $finalStates;
-
+    /**
+     * Minimize DFA and return either a new minimized DFA or
+     *
+     * @return DFA
+     */
     public function minimize(): DFA {
+        $this->__construct($this->dfa);
         // initial partition of non final and (different) final states
-        $nodeSetSet = $this->getInitialPartitions();
+        $this->getInitialPartitions();
+        $nodeSetSet = $this->nodeSetSet;
         // partition of alphasets used in transitions
         $disjointAlphas = $this->getDisjointAlphaSets();
 
@@ -55,11 +78,11 @@ class DFAMinimizer {
                     // the algorithm will refine a set into at least one set with at least one element
                     // so there should never appear an empty set
                     assert($nodeSet->count() > 0);
-                    $nsom = $this->refineSet($nodeSetSet, $nodeSet, $alphaSet);
+                    $nsom = $this->refineSet($nodeSet, $alphaSet);
                     assert(count($nsom) > 0);
                     // if refinement only returned one set, nothing changed (same partition)
                     // otherwise we need to add the new partitions and mark the change
-                    if(count($nsom) > 1) {
+                    if (count($nsom) > 1) {
                         $nodeSetSet->remove($setPointer--);
                         foreach (array_values($nsom) as $newSet) {
                             $nodeSetSet->add($newSet, false);
@@ -75,36 +98,42 @@ class DFAMinimizer {
         assert($nodeSetSet->count() <= $this->dfa->getNodes()->count());
 
         // check, if we have as many partitions as the previous DFA, nothing realy changes
-        if($nodeSetSet->count() === $this->dfa->getNodes()->count()) {
+        if ($nodeSetSet->count() === $this->dfa->getNodes()->count()) {
             return $this->dfa;
         }
 
         // dfa reconstruction
-        return $this->reconstructDFA($nodeSetSet);
+        return $this->reconstructDFA();
     }
 
-    protected function reconstructDFA(NodeSetMapper $nodeSetSet): DFA {
+    /**
+     * reconstruct the minimized DFA from the node partitions and final states
+     *
+     * @return DFA
+     */
+    protected function reconstructDFA(): DFA {
+        $nodeSetSet = $this->nodeSetSet;
         // create an mapping for.. mapping old dfa nodes to new ones
-        $nodeRemap = new \SplFixedArray($this->dfa->getNodes()->count());
-        for($i = 0; $i < $nodeSetSet->count(); $i++) {
+        $nodeRemap = new SplFixedArray($this->dfa->getNodes()->count());
+        for ($i = 0; $i < $nodeSetSet->count(); $i++) {
             $ns = $nodeSetSet->getNodeSetFor($i);
-            foreach($ns->enumerator() as $nodeID) {
+            foreach ($ns->enumerator() as $nodeID) {
                 $nodeRemap[$nodeID] = $i;
             }
         }
         // create new DFA nodes
         $oldNodes = $this->dfa->getNodes();
-        $nodes = new \SplFixedArray($nodeSetSet->count());
-        for($i = 0; $i < $nodeSetSet->count(); $i++) {
+        $nodes = new SplFixedArray($nodeSetSet->count());
+        for ($i = 0; $i < $nodeSetSet->count(); $i++) {
             $nodes[$i] = new DFAFixedNode();
         }
         // merge old transitions with same source/target into new transitions
-        for($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
+        for ($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
             /**
              * @var DFAFixedNode $oldNode
              */
             $oldNode = $oldNodes->current();
-            for($oldNode->transitions->rewind(); $oldNode->transitions->valid(); $oldNode->transitions->next()) {
+            for ($oldNode->transitions->rewind(); $oldNode->transitions->valid(); $oldNode->transitions->next()) {
                 /**
                  * @var DFAFixedNodeTransition $oldTrans
                  */
@@ -112,33 +141,33 @@ class DFAMinimizer {
                 $newTarget = $nodeRemap[$oldTrans->targetNode];
                 $newTransitions = $nodes[$nodeRemap[$oldNodes->key()]]->transitions;
                 $added = false;
-                for($newTransitions->rewind(); $newTransitions->valid(); $newTransitions->next()) {
+                for ($newTransitions->rewind(); $newTransitions->valid(); $newTransitions->next()) {
                     /**
                      * @var DFAFixedNodeTransition $newTrans
                      */
                     $newTrans = $newTransitions->current();
-                    if($newTrans->targetNode === $newTarget) {
-                        if(!$newTrans->transitionSet->contains($oldTrans->transitionSet)) {
+                    if ($newTrans->targetNode === $newTarget) {
+                        if (!$newTrans->transitionSet->contains($oldTrans->transitionSet)) {
                             $newTrans->transitionSet = $newTrans->transitionSet->union($oldTrans->transitionSet);
                         }
                         $added = true;
                         break;
                     }
                 }
-                if(!$added) {
+                if (!$added) {
                     $newTransitions->push(new DFAFixedNodeTransition(clone $oldTrans->transitionSet, $newTarget));
                 }
             }
         }
         // copy one the final states of any representative for each partition and assign it to the new node
-        for($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
+        for ($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
             /**
              * @var DFAFixedNode $oldNode
              */
             $oldNode = $oldNodes->current();
-            if($oldNode->finalStates !== null) {
+            if ($oldNode->finalStates !== null) {
                 $newNodeID = $nodeRemap[$oldNodes->key()];
-                if($nodes[$newNodeID]->finalStates === null) {
+                if ($nodes[$newNodeID]->finalStates === null) {
                     $nodes[$newNodeID]->finalStates = clone $oldNode->finalStates;
                 }
             }
@@ -147,19 +176,26 @@ class DFAMinimizer {
         return new DFA($nodes, $nodeRemap[$this->dfa->getStartNode()]);
     }
 
-    protected function refineSet(NodeSetMapper $nsm, NodeSet $ns, AlphaSet $as): array {
+    /**
+     * With given source set of the partition and the given alpha set, refine the partition
+     * by checking transitions into other partitions.
+     *
+     * @param NodeSet $ns
+     * @param AlphaSet $as
+     * @return NodeSet[]
+     */
+    protected function refineSet(NodeSet $ns, AlphaSet $as): array {
+        $nsm = $this->nodeSetSet;
         /**
          * @var NodeSet[] $result
          */
         $result = [];
-        /**
-         * @var SplFixedArray<DFAFixedNode> $nodes
-         */
         $nodes = $this->dfa->getNodes();
         /**
          * @var int $nodeID
          */
         foreach ($ns->enumerator() as $nodeID) {
+            $representative = -1;
             /**
              * @var DFAFixedNode $node
              */
@@ -171,24 +207,27 @@ class DFAMinimizer {
                  * @var DFAFixedNodeTransition $t
                  */
                 $t = $node->transitions->current();
-                if($t->transitionSet->contains($as)) {
+                if ($t->transitionSet->contains($as)) {
                     $representative = $nsm->findRepresentativeSet($t->targetNode);
                     assert($representative !== null);
-                    if(isset($result[$representative])) {
-                        $result[$representative]->add($nodeID);
-                    } else {
-                        $newSet = new NodeSet($nodes->count());
-                        $newSet->add($nodeID);
-                        $result[$representative] = $newSet;
-                    }
+                    // since operating on DFA must only yield one transition to go for with given disjoint alpha subset
+                    // we don't need to look further here
+                    break;
                 }
+            }
+            if (isset($result[$representative])) {
+                $result[$representative]->add($nodeID);
+            } else {
+                $newSet = new NodeSet($nodes->count());
+                $newSet->add($nodeID);
+                $result[$representative] = $newSet;
             }
         }
         return $result;
     }
 
     /**
-     * Return a unique ID for the multi final state, order of finalStates is not be relevant
+     * Return a unique ID for the multi final state, order of finalStates is not relevant
      * (f.e. ['int'] => 0, ['float'] => 1, ['int','float'] => 2, ['float,'int'] => 2)
      *
      * @param SplFixedArray $finalStates
@@ -211,7 +250,17 @@ class DFAMinimizer {
         return $this->multiFinalStateLT->lookupAdd($multiFinalStateString);
     }
 
-    protected function getInitialPartitions(): NodeSetMapper {
+    /**
+     * Create the initial partitions by partitioning the DFA Nodes into
+     * non final and final sets. The final set partitions will be calculated based on the final states each node
+     * can end in. This is not as optimal as partitioning into non finals and finals but it keeps the partitions from
+     * collapsing into (named) final state combinations that didn't exist before.
+     *
+     * Example "digit" and "float" matching machines [0-9] and [0-9]*\.[0-9]+ would collapse into a state machine,
+     * where the sub dfa matching [0-9]* or [0-9] returns the final state names "digit" and "float" which is
+     * wrong for "digit".
+     */
+    protected function getInitialPartitions(): void {
         $nodes = $this->dfa->getNodes();
         /**
          * @var NodeSet[]
@@ -239,13 +288,20 @@ class DFAMinimizer {
         }
 
         // add all created sets to the initial partition
-        $result = new NodeSetMapper();
-        $result->add($NFNodes, false);
+        $this->nodeSetSet->add($NFNodes, false);
         foreach (array_values($FNodeSets) as $set) {
-            $result->add($set, false);
+            $this->nodeSetSet->add($set, false);
         }
     }
 
+    /**
+     * Calculate a set of alpha sets for all transitions in the DFA. This can then be used to check transitions for
+     * whole character classes instead of each character (if possible).
+     *
+     * On the downside, this calculation might be more expensive for small machines.
+     *
+     * @return DisjointAlphaSets
+     */
     protected function getDisjointAlphaSets(): DisjointAlphaSets {
         $nodes = $this->dfa->getNodes();
         $disjointAlphas = new DisjointAlphaSets();
