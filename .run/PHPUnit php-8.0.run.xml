@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="PHPUnit php-8.0" type="PHPUnitRunConfigurationType" factoryName="PHPUnit">
+    <CommandLine>
+      <PhpTestInterpreterSettings>
+        <option name="interpreterName" value="php-re2dfa:php-8.0" />
+      </PhpTestInterpreterSettings>
+    </CommandLine>
+    <TestRunner configuration_file="/opt/project/phpunit.xml" scope="XML" options="--coverage-html logs/" />
+    <method v="2" />
+  </configuration>
+</component>

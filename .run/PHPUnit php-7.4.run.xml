@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="PHPUnit" type="PHPUnitRunConfigurationType" factoryName="PHPUnit">
+  <configuration default="false" name="PHPUnit php-7.4" type="PHPUnitRunConfigurationType" factoryName="PHPUnit">
     <CommandLine>
       <PhpTestInterpreterSettings>
-        <option name="interpreterName" value="php-re2dfa:latest" />
+        <option name="interpreterName" value="php-re2dfa:php-7.4" />
       </PhpTestInterpreterSettings>
     </CommandLine>
     <TestRunner configuration_file="/opt/project/phpunit.xml" scope="XML" options="--coverage-html logs/" />

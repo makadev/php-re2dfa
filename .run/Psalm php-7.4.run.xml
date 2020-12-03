@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Psalm php-7.4" type="PhpLocalRunConfigurationType" factoryName="PHP Console" path="$PROJECT_DIR$/psalm-check.php">
+    <CommandLine>
+      <PhpTestInterpreterSettings>
+        <option name="interpreterName" value="php-re2dfa:php-7.4" />
+      </PhpTestInterpreterSettings>
+    </CommandLine>
+    <method v="2" />
+  </configuration>
+</component>

@@ -1,0 +1,22 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Container Bash php-8.0" type="docker-deploy" factoryName="docker-image" server-name="Docker">
+    <deployment type="docker-image">
+      <settings>
+        <option name="imageTag" value="php-re2dfa:php-8.0" />
+        <option name="command" value="bash -c &quot;bash&quot;" />
+        <option name="containerName" value="php-re2dfa-dev-stormcnt-php-8.0" />
+        <option name="entrypoint" value="" />
+        <option name="commandLineOptions" value="-it" />
+        <option name="volumeBindings">
+          <list>
+            <DockerVolumeBindingImpl>
+              <option name="containerPath" value="/workspace" />
+              <option name="hostPath" value="$PROJECT_DIR$" />
+            </DockerVolumeBindingImpl>
+          </list>
+        </option>
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

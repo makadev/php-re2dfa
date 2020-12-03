@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Container Bash" type="docker-deploy" factoryName="docker-image" server-name="Docker">
+  <configuration default="false" name="Container Bash php-7.4" type="docker-deploy" factoryName="docker-image" server-name="Docker">
     <deployment type="docker-image">
       <settings>
-        <option name="imageTag" value="php-re2dfa:latest" />
+        <option name="imageTag" value="php-re2dfa:php-7.4" />
         <option name="command" value="bash -c &quot;bash&quot;" />
-        <option name="containerName" value="php-re2dfa-dev-stormcnt" />
+        <option name="containerName" value="php-re2dfa-dev-stormcnt-php-7.4" />
         <option name="entrypoint" value="" />
         <option name="commandLineOptions" value="-it" />
         <option name="volumeBindings">
