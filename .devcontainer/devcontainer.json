@@ -1,0 +1,20 @@
+{
+  "name": "PHP Dev",
+  "build": {
+    "dockerfile": "../docker/build/runner/Dockerfile",
+    "context": "../docker/build/runner/",
+    "args": {
+      "PHP_CLI_IMAGE": "php:8.0-cli-buster",
+      "COMPOSER_IMAGE": "composer:2",
+    }
+  },
+  "runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"],
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+  ],
+  "remoteUser": "tester",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace"
+}
