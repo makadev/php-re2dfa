@@ -135,30 +135,33 @@ class DFAMinimizer {
             }
         }
         // create new DFA nodes
-        $oldNodes = $this->dfa->getNodes();
         $nodes = new SplFixedArray($nodeSetSet->count());
         for ($i = 0; $i < $nodeSetSet->count(); $i++) {
             $nodes[$i] = new DFAFixedNode();
         }
         // merge old transitions with same source/target into new transitions
-        for ($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
+        $oldNodes = $this->dfa->getNodes();
+        $oldNodesIter = new IteratorIterator($oldNodes);
+        /**
+         * @var int $oldNodeKey
+         */
+        /**
+         * @var DFAFixedNode $oldNode
+         */
+        foreach ($oldNodesIter as $oldNodeKey => $oldNode) {
+            $oldTransIter = new IteratorIterator($oldNode->transitions);
             /**
-             * @var DFAFixedNode $oldNode
+             * @var DFAFixedNodeTransition $oldTrans
              */
-            $oldNode = $oldNodes->current();
-            for ($oldNode->transitions->rewind(); $oldNode->transitions->valid(); $oldNode->transitions->next()) {
-                /**
-                 * @var DFAFixedNodeTransition $oldTrans
-                 */
-                $oldTrans = $oldNode->transitions->current();
+            foreach ($oldTransIter as $oldTrans) {
                 $newTarget = $nodeRemap[$oldTrans->targetNode];
-                $newTransitions = $nodes[$nodeRemap[$oldNodes->key()]]->transitions;
+                $newTransitions = $nodes[$nodeRemap[$oldNodeKey]]->transitions;
+                $newTransIter = new IteratorIterator($newTransitions);
                 $added = false;
-                for ($newTransitions->rewind(); $newTransitions->valid(); $newTransitions->next()) {
-                    /**
-                     * @var DFAFixedNodeTransition $newTrans
-                     */
-                    $newTrans = $newTransitions->current();
+                /**
+                 * @var DFAFixedNodeTransition $newTrans
+                 */
+                foreach ($newTransIter as $newTrans) {
                     if ($newTrans->targetNode === $newTarget) {
                         if (!$newTrans->transitionSet->contains($oldTrans->transitionSet)) {
                             $newTrans->transitionSet = $newTrans->transitionSet->union($oldTrans->transitionSet);
@@ -174,28 +177,35 @@ class DFAMinimizer {
         }
         // copy one the final states of any representative for each partition and assign it to the new node or
         // for non individual finals merge all final states of a partition
-        for ($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
-            /**
-             * @var DFAFixedNode $oldNode
-             */
-            $oldNode = $oldNodes->current();
+        $oldNodesIter = new IteratorIterator($oldNodes);
+        /**
+         * @var int $oldNodeKey
+         */
+        /**
+         * @var DFAFixedNode $oldNode
+         */
+        foreach ($oldNodesIter as $oldNodeKey => $oldNode) {
             if ($oldNode->finalStates !== null) {
-                $newNodeID = $nodeRemap[$oldNodes->key()];
+                $newNodeID = $nodeRemap[$oldNodeKey];
                 if ($nodes[$newNodeID]->finalStates === null) {
                     $nodes[$newNodeID]->finalStates = clone $oldNode->finalStates;
                 } else {
                     if (!$this->individualFinals) {
                         //TODO: optimize.. better replace the final states in DFAFixedNode with something
                         // that allows for better/optimized handling of final states and mappings
-                        for ($oldNode->finalStates->rewind(); $oldNode->finalStates->valid(); $oldNode->finalStates->next()) {
-                            $cstate = $oldNode->finalStates->current();
+                        $finIter = new IteratorIterator($oldNode->finalStates);
+                        /**
+                         * @var string $cstate
+                         */
+                        foreach ($finIter as $cstate) {
                             /**
                              * @var SplFixedArray<string> $fs
                              */
                             $fs = $nodes[$newNodeID]->finalStates;
+                            $fsIter = new IteratorIterator($fs);
                             $added = false;
-                            for ($fs->rewind(); $fs->valid(); $fs->next()) {
-                                if ($fs->current() === $cstate) {
+                            foreach ($fsIter as $state) {
+                                if ($state === $cstate) {
                                     $added = true;
                                     break;
                                 }
@@ -239,11 +249,11 @@ class DFAMinimizer {
             $node = $nodes[$nodeID];
             // refine partition $ns by sorting all of it's nodes into different partitions if
             // their target nodes are in different partitions
-            for ($node->transitions->rewind(); $node->transitions->valid(); $node->transitions->next()) {
-                /**
-                 * @var DFAFixedNodeTransition $t
-                 */
-                $t = $node->transitions->current();
+            $transIter = new IteratorIterator($node->transitions);
+            /**
+             * @var DFAFixedNodeTransition $t
+             */
+            foreach ($transIter as $t) {
                 if ($t->transitionSet->contains($as)) {
                     $representative = $nsm->findRepresentativeSet($t->targetNode);
                     assert($representative !== null);
