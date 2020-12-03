@@ -38,6 +38,16 @@ class NodeAllocator {
     }
 
     /**
+     * reduce allocation counter
+     *
+     * @param int $amount
+     */
+    public function deallocate(int $amount = 1): void {
+        assert(($this->last - $amount) >= -1);
+        $this->last -= $amount;
+    }
+
+    /**
      * get last allocated node
      *
      * @return int

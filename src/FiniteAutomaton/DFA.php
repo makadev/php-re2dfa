@@ -2,11 +2,6 @@
 
 namespace makadev\RE2DFA\FiniteAutomaton;
 
-use makadev\RE2DFA\CharacterSet\AlphaSet;
-use makadev\RE2DFA\CharacterSet\DisjointAlphaSets;
-use makadev\RE2DFA\FiniteAutomaton;
-use makadev\RE2DFA\NodeSet\NodeAllocator;
-use makadev\RE2DFA\NodeSet\NodeSet;
 use SplFixedArray;
 
 class DFA {
@@ -25,60 +20,15 @@ class DFA {
     }
 
     /**
+     * DFA constructor.
      *
      * @var SplFixedArray<DFAFixedNode>
      */
     private SplFixedArray $nodes;
 
-    /**
-     * DFA constructor.
-     *
-     * @param NodeAllocator $allocator
-     * @param int $start
-     * @param array<array> $finalStates
-     * @param AlphaTransitionList $transitions
-     */
-    public function __construct(NodeAllocator $allocator, int $start, array $finalStates, AlphaTransitionList $transitions) {
-        // startnode
-        $this->startNode = $start;
-        // create node lookup table
-        $nodeTable = new SplFixedArray($allocator->allocations());
-        for ($i = 0; $i < $allocator->allocations(); $i++) {
-            $nodeTable[$i] = new FiniteAutomaton\DFAFixedNode();
-        }
-        $this->nodes = $nodeTable;
-        // save final states
-        /**
-         * @var string $finalName
-         * @var int[] $finalNodes
-         */
-        foreach ($finalStates as $finalName => $finalNodes) {
-            if (count($finalNodes) > 0) {
-                foreach ($finalNodes as $finalNode) {
-                    /**
-                     * @var DFAFixedNode $nodeObj
-                     */
-                    $nodeObj = $this->nodes[$finalNode];
-                    if ($nodeObj->finalStates !== null) {
-                        $nodeObj->finalStates->setSize($nodeObj->finalStates->getSize() + 1);
-                    } else {
-                        $nodeObj->finalStates = new SplFixedArray(1);
-                    }
-                    $nodeObj->finalStates[$nodeObj->finalStates->getSize() - 1] = $finalName;
-                }
-            }
-        }
-        // save transition
-        /**
-         * @var AlphaTransition $transition
-         */
-        foreach ($transitions->enumerator() as $transition) {
-            /**
-             * @var DFAFixedNode $node
-             */
-            $node = $this->nodes[$transition->getFromNode()];
-            $node->transitions->push(new FiniteAutomaton\DFAFixedNodeTransition(clone $transition->getAlphaSet(), $transition->getToNode()));
-        }
+    public function __construct(SplFixedArray $nodes, int $startNode) {
+        $this->startNode = $startNode;
+        $this->nodes = $nodes;
     }
 
     /**
@@ -150,6 +100,15 @@ class DFA {
     }
 
     /**
+     * Access the DFA Nodes directly
+     *
+     * @return SplFixedArray<DFAFixedNode>
+     */
+    public function getNodes(): SplFixedArray {
+        return $this->nodes;
+    }
+
+    /**
      *
      *
      * @return string
@@ -168,7 +127,7 @@ class DFA {
                 $fins = $this->getFinalStates($id);
                 $first = true;
                 for ($fins->rewind(); $fins->valid(); $fins->next()) {
-                    $result .= $fins->current() . $first ? '' : ',';
+                    $result .= ($first ? '' : ',') . $fins->current();
                     $first = false;
                 }
                 $result .= "]" . PHP_EOL;
@@ -187,39 +146,4 @@ class DFA {
         return $result;
     }
 
-    /**
-     * calculate the minimal DFA
-     *
-     * @return DFA
-     */
-    public function getMinDFA(): DFA {
-        // final node set for starting partition
-        $finalNodes = new NodeSet($this->nodes->count());
-        // nonfinal node set for starting partition
-        $nonFinalNodes = new NodeSet($this->nodes->count());
-        // disjoint alpha sets used for transition checks
-        $disjointAlphas = new DisjointAlphaSets();
-        // calculate start sets
-        for($this->nodes->rewind(); $this->nodes->valid(); $this->nodes->next()) {
-            /**
-             * @var DFAFixedNode $node
-             */
-            $node = $this->nodes->current();
-            $nodeid = $this->nodes->key();
-            if($node->finalStates === null || (count($node->finalStates) <= 0)) {
-                $nonFinalNodes->add($nodeid);
-            } else {
-                $finalNodes->add($nodeid);
-            }
-            for($node->transitions->rewind(); $node->transitions->valid(); $node->transitions->next()) {
-                /**
-                 * @var DFAFixedNodeTransition $transition
-                 */
-                $transition = $node->transitions->current();
-                $disjointAlphas->addAlpha($transition->transitionSet);
-            }
-        }
-
-
-    }
 }

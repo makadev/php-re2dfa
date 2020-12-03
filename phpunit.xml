@@ -18,13 +18,17 @@
   </coverage>
   <testsuites>
     <testsuite name="Unit">
+      <!-- utility -->
+      <file>./tests/Unit/StringMapperTest.php</file>
       <file>./tests/Unit/AlphaSetTest.php</file>
       <file>./tests/Unit/EpsilonTransitionsTest.php</file>
       <file>./tests/Unit/AlphaTransitionsTest.php</file>
       <file>./tests/Unit/NodeSetTest.php</file>
+      <!-- main -->
       <file>./tests/Unit/EpsilonNFATest.php</file>
       <file>./tests/Unit/RegExParserTest.php</file>
       <file>./tests/Unit/DFABuilderTest.php</file>
+      <file>./tests/Unit/DFAMinimizerTest.php</file>
     </testsuite>
   </testsuites>
   <logging/>
