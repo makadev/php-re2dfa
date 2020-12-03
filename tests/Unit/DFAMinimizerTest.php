@@ -1,7 +1,10 @@
 <?php
 
+use makadev\RE2DFA\CharacterSet\AlphaSet;
 use makadev\RE2DFA\FiniteAutomaton\DFA;
 use makadev\RE2DFA\FiniteAutomaton\DFABuilder;
+use makadev\RE2DFA\FiniteAutomaton\DFAFixedNode;
+use makadev\RE2DFA\FiniteAutomaton\DFAFixedNodeTransition;
 use makadev\RE2DFA\FiniteAutomaton\DFAMinimizer;
 use makadev\RE2DFA\RegEx\RegExParser;
 use PHPUnit\Framework\TestCase;
@@ -116,21 +119,28 @@ class DFAMinimizerTest extends TestCase {
     }
 
     public function testNonCollapsingFinals(): void {
-        $dfaBuilder = new DFABuilder();
+        $digetAlpha = new AlphaSet();
+        $digetAlpha->setRange(ord('0'), ord('9'));
 
-        $floatingPoint = new RegExParser('([-+]?)([0-9]*)([.]?)([0-9]+)(([eE]([-+]?)([0-9]+))?)');
-        $dfaBuilder->addENFA($floatingPoint->build(), "float");
+        $startNode = new DFAFixedNode();
+        $startNode->transitions->push(new DFAFixedNodeTransition(clone $digetAlpha, 1));
 
-        $floatingPoint = new RegExParser('([0-9]*)[.]([0-9]+)');
-        $dfaBuilder->addENFA($floatingPoint->build(), "float");
+        //
+        $node = new DFAFixedNode();
+        $node->finalStates = SplFixedArray::fromArray(['digit', 'number'], false);
+        $node->transitions->push(new DFAFixedNodeTransition(clone $digetAlpha, 2));
 
-        $integer = new RegExParser('([0-9]+)');
-        $dfaBuilder->addENFA($integer->build(), "integer");
+        //
+        $node2 = new DFAFixedNode();
+        $node2->finalStates = SplFixedArray::fromArray(['number']);
+        $node2->transitions->push(new DFAFixedNodeTransition(clone $digetAlpha, 3));
 
-        $digit = new RegExParser('[0-9]');
-        $dfaBuilder->addENFA($digit->build(), "digit");
+        //
+        $node3 = new DFAFixedNode();
+        $node3->finalStates = SplFixedArray::fromArray(['number']);
+        $node3->transitions->push(new DFAFixedNodeTransition(clone $digetAlpha, 3));
 
-        $dfa = $dfaBuilder->build();
+        $dfa = new DFA(SplFixedArray::fromArray([$startNode, $node, $node2, $node3]), 0);
         $minimizer = new DFAMinimizer($dfa);
         $mdfa = $minimizer->minimize();
 
@@ -138,13 +148,47 @@ class DFAMinimizerTest extends TestCase {
 
         $this->assertNotNull($mdfa);
         $this->assertNoDFAMatch($mdfa, "");
-        $this->assertDFAMatch($mdfa, "1", ['float']);
+        $this->assertDFAMatch($mdfa, "1", ['number']);
         $this->assertDFAMatch($mdfa, "1", ['digit']);
-        $this->assertDFAMatch($mdfa, "1", ['integer']);
+        $this->assertDFAMatch($mdfa, "1", ['number']);
         $this->assertNoDFAMatch($mdfa, "10", ['digit']);
-        $this->assertDFAMatch($mdfa, "10", ['float']);
-        $this->assertDFAMatch($mdfa, "10", ['integer']);
-        $this->assertNoDFAMatch($mdfa, ".1", ['digit']);
-        $this->assertNoDFAMatch($mdfa, ".1", ['integer']);
+        $this->assertDFAMatch($mdfa, "10", ['number']);
+    }
+
+    public function testCollapsingFinals(): void {
+        $digetAlpha = new AlphaSet();
+        $digetAlpha->setRange(ord('0'), ord('9'));
+
+        $startNode = new DFAFixedNode();
+        $startNode->transitions->push(new DFAFixedNodeTransition(clone $digetAlpha, 1));
+
+        //
+        $node = new DFAFixedNode();
+        $node->finalStates = SplFixedArray::fromArray(['digit', 'number'], false);
+        $node->transitions->push(new DFAFixedNodeTransition(clone $digetAlpha, 2));
+
+        //
+        $node2 = new DFAFixedNode();
+        $node2->finalStates = SplFixedArray::fromArray(['number']);
+        $node2->transitions->push(new DFAFixedNodeTransition(clone $digetAlpha, 3));
+
+        //
+        $node3 = new DFAFixedNode();
+        $node3->finalStates = SplFixedArray::fromArray(['number']);
+        $node3->transitions->push(new DFAFixedNodeTransition(clone $digetAlpha, 3));
+
+        $dfa = new DFA(SplFixedArray::fromArray([$startNode, $node, $node2, $node3]), 0);
+        $minimizer = new DFAMinimizer($dfa, false);
+        $mdfa = $minimizer->minimize();
+
+        $this->assertNotSame($dfa, $mdfa);
+
+        $this->assertNotNull($mdfa);
+        $this->assertNoDFAMatch($mdfa, "");
+        $this->assertDFAMatch($mdfa, "1", ['number']);
+        $this->assertDFAMatch($mdfa, "", ['digit']);
+        $this->assertDFAMatch($mdfa, "1", ['number']);
+        $this->assertNoDFAMatch($mdfa, "10", ['digit']);
+        $this->assertDFAMatch($mdfa, "10", ['number']);
     }
 }

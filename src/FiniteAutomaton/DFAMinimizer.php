@@ -42,15 +42,27 @@ class DFAMinimizer {
     protected NodeSetMapper $nodeSetSet;
 
     /**
+     * whether final states are seen as individual or not
+     *
+     * @var bool
+     */
+    protected bool $individualFinals;
+
+    /**
      * DFAMinimizer constructor.
      *
      * @param DFA $dfa
+     * @param bool $individualFinals whether final states are seen as individual or not, setting this to false can
+     * reduce the amount of nodes further but merges named final states together which fall into the same partition,
+     * creating wrong matches for sub nfa's matching a common subset of a given language like digit [0-9] and positive
+     * [0-9]+ matching "10" as digit after minimization.
      */
-    public function __construct(DFA $dfa) {
+    public function __construct(DFA $dfa, bool $individualFinals = true) {
         $this->dfa = $dfa;
         $this->finalStateLT = new StringMapper();
         $this->multiFinalStateLT = new StringMapper();
         $this->nodeSetSet = new NodeSetMapper();
+        $this->individualFinals = $individualFinals;
     }
 
     /**
@@ -159,7 +171,8 @@ class DFAMinimizer {
                 }
             }
         }
-        // copy one the final states of any representative for each partition and assign it to the new node
+        // copy one the final states of any representative for each partition and assign it to the new node or
+        // for non individual finals merge all final states of a partition
         for ($oldNodes->rewind(); $oldNodes->valid(); $oldNodes->next()) {
             /**
              * @var DFAFixedNode $oldNode
@@ -169,6 +182,29 @@ class DFAMinimizer {
                 $newNodeID = $nodeRemap[$oldNodes->key()];
                 if ($nodes[$newNodeID]->finalStates === null) {
                     $nodes[$newNodeID]->finalStates = clone $oldNode->finalStates;
+                } else {
+                    if (!$this->individualFinals) {
+                        //TODO: optimize.. better replace the final states in DFAFixedNode with something
+                        // that allows for better/optimized handling of final states and mappings
+                        for ($oldNode->finalStates->rewind(); $oldNode->finalStates->valid(); $oldNode->finalStates->next()) {
+                            $cstate = $oldNode->finalStates->current();
+                            /**
+                             * @var SplFixedArray<string> $fs
+                             */
+                            $fs = $nodes[$newNodeID]->finalStates;
+                            $added = false;
+                            for ($fs->rewind(); $fs->valid(); $fs->next()) {
+                                if ($fs->current() === $cstate) {
+                                    $added = true;
+                                    break;
+                                }
+                            }
+                            if (!$added) {
+                                $fs->setSize($fs->getSize() + 1);
+                                $fs[$fs->getSize() - 1] = $cstate;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -274,7 +310,7 @@ class DFAMinimizer {
             $node = $nodes->current();
             $nodeID = $nodes->key();
             if ($node->finalStates !== null && ($node->finalStates->count() > 0)) {
-                $fsID = $this->multiFinalStateUniqueID($node->finalStates);
+                $fsID = $this->individualFinals ? $this->multiFinalStateUniqueID($node->finalStates) : 0;
                 if (isset($FNodeSets[$fsID])) {
                     $FNodeSets[$fsID]->add($nodeID);
                 } else {

@@ -2,8 +2,6 @@
 
 namespace makadev\RE2DFA\FiniteAutomaton;
 
-use makadev\RE2DFA\FiniteAutomaton;
-use makadev\RE2DFA\NodeSet\NodeAllocator;
 use SplFixedArray;
 
 class DFA {
@@ -28,8 +26,7 @@ class DFA {
      */
     private SplFixedArray $nodes;
 
-    public function __construct(SplFixedArray $nodes, int $startNode)
-    {
+    public function __construct(SplFixedArray $nodes, int $startNode) {
         $this->startNode = $startNode;
         $this->nodes = $nodes;
     }
@@ -130,7 +127,7 @@ class DFA {
                 $fins = $this->getFinalStates($id);
                 $first = true;
                 for ($fins->rewind(); $fins->valid(); $fins->next()) {
-                    $result .= $fins->current() . $first ? '' : ',';
+                    $result .= ($first ? '' : ',') . $fins->current();
                     $first = false;
                 }
                 $result .= "]" . PHP_EOL;
