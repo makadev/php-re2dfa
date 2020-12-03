@@ -1,0 +1,43 @@
+name: CI Testing
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  dev-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-20.04
+    container: php:8.0-cli-buster
+    steps:
+      # install wget / unzip / git which might be used for composer setup and by composer itself
+      - shell: bash
+        run: apt-get update && apt-get -y install --no-install-recommends wget unzip git
+      # checkout code
+      - name: checkout code
+        uses: actions/checkout@v2
+      # install composer
+      - shell: bash
+        run: chmod +x .github/scripts/install-composer.sh && .github/scripts/install-composer.sh
+      # get composer cache files directory
+      - name: get composer cache files directory
+        id: composer-cache
+        run: |
+          echo "::set-output name=dir::$(php composer.phar config cache-files-dir)"
+      # cache pull/push setup
+      - uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}--composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}--composer-
+      # install dependencies
+      - shell: bash
+        run: php composer.phar install
+      # run phpunit (no coverage)
+      - shell: bash
+        run: vendor/phpunit/phpunit/phpunit -c phpunit.xml --no-coverage
