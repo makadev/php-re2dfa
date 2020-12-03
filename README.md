@@ -1,3 +1,5 @@
+![CI Testing](https://github.com/makadev/php-re2dfa/workflows/CI%20Testing/badge.svg)
+
 ## php-re2dfa
 PHP Library for Regular Expression to DFA transformation.
 
