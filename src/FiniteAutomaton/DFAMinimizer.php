@@ -4,6 +4,7 @@
 namespace makadev\RE2DFA\FiniteAutomaton;
 
 
+use IteratorIterator;
 use makadev\RE2DFA\CharacterSet\AlphaSet;
 use makadev\RE2DFA\CharacterSet\DisjointAlphaSets;
 use makadev\RE2DFA\NodeSet\NodeSet;
@@ -303,12 +304,14 @@ class DFAMinimizer {
          */
         $FNodeSets = [];
         $NFNodes = new NodeSet($nodes->count());
-        for ($nodes->rewind(); $nodes->valid(); $nodes->next()) {
-            /**
-             * @var DFAFixedNode $node
-             */
-            $node = $nodes->current();
-            $nodeID = $nodes->key();
+        $nodeIter = new IteratorIterator($nodes);
+        /**
+         * @var int $nodeID
+         */
+        /**
+         * @var DFAFixedNode $node
+         */
+        foreach ($nodeIter as $nodeID => $node) {
             if ($node->finalStates !== null && ($node->finalStates->count() > 0)) {
                 $fsID = $this->individualFinals ? $this->multiFinalStateUniqueID($node->finalStates) : 0;
                 if (isset($FNodeSets[$fsID])) {
@@ -341,16 +344,16 @@ class DFAMinimizer {
     protected function getDisjointAlphaSets(): DisjointAlphaSets {
         $nodes = $this->dfa->getNodes();
         $disjointAlphas = new DisjointAlphaSets();
-        for ($nodes->rewind(); $nodes->valid(); $nodes->next()) {
+        $nodeIter = new IteratorIterator($nodes);
+        /**
+         * @var DFAFixedNode $node
+         */
+        foreach ($nodeIter as $node) {
+            $transIter = new IteratorIterator($node->transitions);
             /**
-             * @var DFAFixedNode $node
+             * @var DFAFixedNodeTransition $transition
              */
-            $node = $nodes->current();
-            for ($node->transitions->rewind(); $node->transitions->valid(); $node->transitions->next()) {
-                /**
-                 * @var DFAFixedNodeTransition $transition
-                 */
-                $transition = $node->transitions->current();
+            foreach ($transIter as $transition) {
                 $disjointAlphas->addAlpha($transition->transitionSet);
             }
         }

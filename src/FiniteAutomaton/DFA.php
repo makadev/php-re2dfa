@@ -2,6 +2,7 @@
 
 namespace makadev\RE2DFA\FiniteAutomaton;
 
+use IteratorIterator;
 use SplFixedArray;
 
 class DFA {
@@ -115,29 +116,34 @@ class DFA {
      */
     public function __toString(): string {
         $result = "DFA: " . PHP_EOL;
-        for ($this->nodes->rewind(); $this->nodes->valid(); $this->nodes->next()) {
-            /**
-             * @var DFAFixedNode $node
-             */
-            $node = $this->nodes->current();
-            $id = $this->nodes->key();
+        $nodeIter = new IteratorIterator($this->nodes);
+        /**
+         * @var int $id
+         */
+        /**
+         * @var DFAFixedNode $node
+         */
+        foreach ($nodeIter as $id => $node) {
             $result .= "  From Node " . $id . (($id === $this->startNode) ? ' (START)' : '') . PHP_EOL;
             if ($this->isFinal($id)) {
                 $result .= "  FINAL: [";
                 $fins = $this->getFinalStates($id);
+                $finIter = new IteratorIterator($fins);
                 $first = true;
-                for ($fins->rewind(); $fins->valid(); $fins->next()) {
-                    $result .= ($first ? '' : ',') . $fins->current();
+                /**
+                 * @var string $fin
+                 */
+                foreach ($finIter as $fin) {
+                    $result .= ($first ? '' : ',') . $fin;
                     $first = false;
                 }
                 $result .= "]" . PHP_EOL;
             }
-            $trans = $node->transitions;
-            for ($trans->rewind(); $trans->valid(); $trans->next()) {
-                /**
-                 * @var DFAFixedNodeTransition $t
-                 */
-                $t = $trans->current();
+            $transIter = new IteratorIterator($node->transitions);
+            /**
+             * @var DFAFixedNodeTransition $t
+             */
+            foreach ($transIter as $t) {
                 $result .= "    With Alpha " . (string)$t->transitionSet . PHP_EOL;
                 $result .= "      To Node " . $t->targetNode . PHP_EOL;
             }

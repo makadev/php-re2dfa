@@ -4,6 +4,7 @@
 namespace makadev\RE2DFA\NodeSet;
 
 
+use IteratorIterator;
 use RuntimeException;
 use SplFixedArray;
 
@@ -138,16 +139,18 @@ class NodeSetMapper {
      */
     public function findSet(NodeSet $nodeSet): ?int {
         $i = 0;
-        for ($this->mapping->rewind(); $this->mapping->valid(); $this->mapping->next()) {
+        $iter = new IteratorIterator($this->mapping);
+        /**
+         * @var int $key
+         */
+        /**
+         * @var NodeSet $current
+         */
+        foreach ($iter as $key => $current) {
             if ($i >= $this->size) {
                 return null;
             }
-            /**
-             * @var NodeSet $currentSet
-             */
-            $currentSet = $this->mapping->current();
-            if ($currentSet->isEqual($nodeSet)) {
-                $key = $this->mapping->key();
+            if ($current->isEqual($nodeSet)) {
                 return $key;
             }
             $i++;
@@ -162,18 +165,17 @@ class NodeSetMapper {
      * @return int|null
      */
     public function findRepresentativeSet(int $node): ?int {
-        $i = 0;
-        for ($this->mapping->rewind(); $this->mapping->valid(); $this->mapping->next()) {
-            /**
-             * @var NodeSet $nodeSet
-             */
-            $nodeSet = $this->mapping->current();
+        $iter = new IteratorIterator($this->mapping);
+        /**
+         * @var int $key
+         */
+        /**
+         * @var NodeSet $nodeSet
+         */
+        foreach($iter as $key => $nodeSet) {
             if ($nodeSet->isIn($node)) {
-                $key = $this->mapping->key();
-                assert(is_int($key));
                 return $key;
             }
-            $i++;
         }
         return null;
     }

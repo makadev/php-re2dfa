@@ -3,6 +3,8 @@
 
 namespace makadev\RE2DFA\FiniteAutomaton;
 
+use IteratorIterator;
+
 class DFARunner {
 
     /**
@@ -118,9 +120,13 @@ class DFARunner {
         }
         if (count($states) > 0) {
             $fins = $this->dfa->getFinalStates($this->node);
+            $finIter = new IteratorIterator($fins);
             foreach ($states as $state) {
-                for ($fins->rewind(); $fins->valid(); $fins->next()) {
-                    if ($fins->current() === $state) {
+                /**
+                 * @var string $fin
+                 */
+                foreach ($finIter as $fin) {
+                    if ($fin === $state) {
                         return true;
                     }
                 }
