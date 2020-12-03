@@ -168,7 +168,6 @@ class RegExParser {
      */
     public function build(): EpsilonNFA {
         if ($this->enfa !== null) return $this->enfa;
-        assert(!$this->stack->empty());
         $this->pos = 0;
         $result = null;
 
