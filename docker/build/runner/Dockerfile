@@ -68,14 +68,14 @@ RUN set -ex \
     ## setup default pathes and install helper scripts
     && mkdir -p /app \
     && cd /usr/local/bin/ \
-        && chmod 755 /usr/local/bin/phpunit-nc \
-        && chmod 755 /usr/local/bin/phpunit-coverage \
-        && chmod 755 /usr/local/bin/phpstan-check \
-        && chmod 755 /usr/local/bin/psalm-check \
-        && chmod 755 /usr/local/bin/opcache-enable \
-        && chmod 755 /usr/local/bin/opcache-disable \
-        && chmod 755 /usr/local/bin/xdebug-enable \
-        && chmod 755 /usr/local/bin/xdebug-disable \
+        && chmod 755 phpunit-nc \
+        && chmod 755 phpunit-coverage \
+        && chmod 755 phpstan-check \
+        && chmod 755 psalm-check \
+        && chmod 755 opcache-enable \
+        && chmod 755 opcache-disable \
+        && chmod 755 xdebug-enable \
+        && chmod 755 xdebug-disable \
         && chmod 755 update-php-ini \
     ## turn off php banner and increase memory limit
     # && /usr/local/bin/update-php-ini "expose_php" "Off" \
