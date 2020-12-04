@@ -72,7 +72,10 @@ class DFAMinimizer {
      * @return DFA
      */
     public function minimize(): DFA {
-        $this->__construct($this->dfa);
+        if($this->nodeSetSet->count() > 0) {
+            // reinitialize
+            $this->__construct($this->dfa, $this->individualFinals);
+        }
         // initial partition of non final and (different) final states
         $this->getInitialPartitions();
         $nodeSetSet = $this->nodeSetSet;

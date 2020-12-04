@@ -146,6 +146,7 @@ class DFAMinimizerTest extends TestCase {
 
         $this->assertNotSame($dfa, $mdfa);
 
+        $this->assertEquals(3, $mdfa->getNodes()->count());
         $this->assertNotNull($mdfa);
         $this->assertNoDFAMatch($mdfa, "");
         $this->assertDFAMatch($mdfa, "1", ['number']);
@@ -155,7 +156,6 @@ class DFAMinimizerTest extends TestCase {
         $this->assertDFAMatch($mdfa, "10", ['number']);
     }
 
-    /** TODO: check minimization against correct min dfa constructions
     public function testCollapsingFinals(): void {
         $digetAlpha = new AlphaSet();
         $digetAlpha->setRange(ord('0'), ord('9'));
@@ -184,13 +184,14 @@ class DFAMinimizerTest extends TestCase {
 
         $this->assertNotSame($dfa, $mdfa);
 
+        $this->assertEquals(2, $mdfa->getNodes()->count());
         $this->assertNotNull($mdfa);
         $this->assertNoDFAMatch($mdfa, "");
         $this->assertDFAMatch($mdfa, "1", ['number']);
-        $this->assertDFAMatch($mdfa, "", ['digit']);
+        $this->assertDFAMatch($mdfa, "1", ['digit']);
         $this->assertDFAMatch($mdfa, "1", ['number']);
-        $this->assertNoDFAMatch($mdfa, "10", ['digit']);
         $this->assertDFAMatch($mdfa, "10", ['number']);
+        // due to collapsing finals this will be true!
+        $this->assertDFAMatch($mdfa, "10", ['digit']);
     }
-     */
 }
