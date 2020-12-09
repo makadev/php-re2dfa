@@ -1,4 +1,4 @@
-name: CI Testing
+kname: CI Testing
 
 on:
   push:
@@ -12,32 +12,34 @@ jobs:
   dev-tests:
     name: Run Unit Tests
     runs-on: ubuntu-20.04
-    container: php:8.0-cli-buster
+    strategy:
+      matrix:
+        php:
+          - "7.4"
+          - "8.0"
+    container:
+      image: ghcr.io/makadev/ci-images/php:${{ matrix.php }}-cli
+      options: --user 1001
     steps:
-      # install wget / unzip / git which might be used for composer setup and by composer itself
-      - shell: bash
-        run: apt-get update && apt-get -y install --no-install-recommends wget unzip git
       # checkout code
       - name: checkout code
         uses: actions/checkout@v2
-      # install composer
-      - shell: bash
-        run: chmod +x .github/scripts/install-composer.sh && .github/scripts/install-composer.sh
       # get composer cache files directory
       - name: get composer cache files directory
         id: composer-cache
         run: |
-          echo "::set-output name=dir::$(php composer.phar config cache-files-dir)"
+          echo "::set-output name=dir::$(/usr/local/bin/composer config cache-files-dir)"
       # cache pull/push setup
       - uses: actions/cache@v2
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}--composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-php-${{ matrix.php }}--composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}--composer-
+            ${{ runner.os }}-php-${{ matrix.php }}--composer-
       # install dependencies
       - shell: bash
-        run: php composer.phar install
+        run: /usr/local/bin/composer install
       # run phpunit (no coverage)
       - shell: bash
         run: vendor/phpunit/phpunit/phpunit -c phpunit.xml --no-coverage
+
