@@ -15,10 +15,10 @@ jobs:
     strategy:
       matrix:
         php:
-          - "7.4"
-          - "8.0"
+          - "php-7.4-cli:latest"
+          - "php-8.0-cli:latest"
     container:
-      image: ghcr.io/makadev/ci-images/php:${{ matrix.php }}-cli
+      image: ghcr.io/makadev/ci-images/${{ matrix.php }}
       options: --user 1001
     steps:
       # checkout code
@@ -33,13 +33,12 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-${{ matrix.php }}--composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-${{ matrix.php }}--composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-php-${{ matrix.php }}--composer-
+            ${{ runner.os }}-${{ matrix.php }}--composer-
       # install dependencies
       - shell: bash
         run: /usr/local/bin/composer install
       # run phpunit (no coverage)
       - shell: bash
         run: vendor/phpunit/phpunit/phpunit -c phpunit.xml --no-coverage
-
