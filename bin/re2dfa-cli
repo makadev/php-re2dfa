@@ -1,0 +1,35 @@
+#!/usr/bin/env php
+<?php declare(strict_types=1);
+
+use makadev\RE2DFA\CLI\Main;
+
+class Binary {
+
+    /**
+     * Expected Compose Autoload File
+     *
+     * @var string[]
+     */
+    protected static array $autoloadFiles = [
+        __DIR__ . '/../vendor/autoload.php',
+        __DIR__ . '/../../../autoload.php',
+    ];
+
+    protected function autoload(): void {
+        foreach (static::$autoloadFiles as $af) {
+            if (file_exists($af)) {
+                /** @noinspection PhpIncludeInspection */
+                require_once $af;
+                break;
+            }
+        }
+    }
+
+    public function run(): int {
+        $this->autoload();
+        $cli = new Main();
+        return $cli->run();
+    }
+}
+
+exit((new Binary())->run());
